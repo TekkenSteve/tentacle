@@ -1,0 +1,33 @@
+{
+  "name": "@tentacle/oidc",
+  "version": "0.1.0",
+  "description": "OIDC browser SSO login provider for the tentacle gateway (design 01 D3)",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts"
+  ],
+  "dependencies": {
+    "@deepseek-ai/cordis": "^4.0.4",
+    "@tentacle/gateway": "workspace:*",
+    "@tentacle/identity": "workspace:*",
+    "openid-client": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

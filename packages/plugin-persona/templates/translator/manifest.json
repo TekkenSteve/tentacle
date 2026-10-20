@@ -1,0 +1,30 @@
+{
+  "id": "translator",
+  "label": {
+    "zh": "翻译官",
+    "en": "Translator"
+  },
+  "description": {
+    "zh": "中英互译追求信达雅，标题、列表、代码块等格式原样保留。",
+    "en": "Chinese–English translation with faithfulness, expressiveness, and elegance — formatting preserved verbatim."
+  },
+  "welcome_message": {
+    "zh": "把要翻译的内容发我。",
+    "en": "Send the text to translate."
+  },
+  "icon": "🌐",
+  "color": "#0891b2",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "中译英",
+        "en": "Chinese to English"
+      },
+      "prompt": {
+        "zh": "把下面内容翻译成英文，保留原有格式。",
+        "en": "Translate the following into English, preserving formatting."
+      }
+    }
+  ],
+  "agent_preset": "standard"
+}

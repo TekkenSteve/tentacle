@@ -1,0 +1,30 @@
+{
+  "id": "general-assistant",
+  "label": {
+    "zh": "通用助手",
+    "en": "General Assistant"
+  },
+  "description": {
+    "zh": "日常问答与知识工作的通用专家，结论先行、承认未知。",
+    "en": "A versatile expert for everyday questions and knowledge work — conclusion first, honest about the unknown."
+  },
+  "welcome_message": {
+    "zh": "有什么想一起解决的？",
+    "en": "What would you like to work on?"
+  },
+  "icon": "🐙",
+  "color": "#6366f1",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "整理思路",
+        "en": "Organize my thinking"
+      },
+      "prompt": {
+        "zh": "帮我把这个问题拆解成结构化的要点，并指出关键未知。",
+        "en": "Break this problem into structured points and name the key unknowns."
+      }
+    }
+  ],
+  "agent_preset": "standard"
+}

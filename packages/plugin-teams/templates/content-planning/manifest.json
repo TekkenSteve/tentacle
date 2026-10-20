@@ -1,0 +1,76 @@
+{
+  "id": "content-planning",
+  "label": {
+    "zh": "内容策划",
+    "en": "Content Planning"
+  },
+  "description": {
+    "zh": "从选题、大纲到多语言成稿的内容生产线。",
+    "en": "A content pipeline from topic and outline to localized drafts."
+  },
+  "welcome_message": {
+    "zh": "告诉我主题或受众，团队会从选题一路做到成稿。",
+    "en": "Name a theme or audience; the team carries it from topics to finished drafts."
+  },
+  "icon": "✍️",
+  "color": "#b45309",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "策划一期内容",
+        "en": "Plan a content series"
+      },
+      "prompt": {
+        "zh": "为「新手入门」策划一期系列内容：选题列表、每篇大纲、术语表。",
+        "en": "Plan a 'getting started' series: topics, per-article outlines, glossary."
+      }
+    }
+  ],
+  "collaboration": "dispatch",
+  "members": [
+    {
+      "expert_id": "general-assistant",
+      "role": {
+        "zh": "选题与结构：受众画像、角度选择、大纲与成稿组织。",
+        "en": "Topics and structure: audience, angle, outline and draft organization."
+      }
+    },
+    {
+      "expert_id": "translator",
+      "role": {
+        "zh": "多语言本地化：术语统一、文化适配、保持原意与语气。",
+        "en": "Localization: consistent terminology, cultural fit, tone and meaning preserved."
+      }
+    }
+  ],
+  "contract": {
+    "goal": {
+      "zh": "从选题到大纲到成稿的完整内容生产，多语言版本术语一致。",
+      "en": "Full content production from topics to drafts, with consistent multilingual terminology."
+    },
+    "constraints": [
+      {
+        "zh": "先大纲后成稿，大纲确认前不写正文。",
+        "en": "Outline before prose; no body text before the outline is settled."
+      },
+      {
+        "zh": "术语表先行，所有语言版本共用同一份术语表。",
+        "en": "Glossary first; every language version shares one glossary."
+      },
+      {
+        "zh": "每篇成稿标注目标受众与语言。",
+        "en": "Every draft states its target audience and language."
+      }
+    ],
+    "delivery": {
+      "zh": "选题列表 → 每篇大纲 → 成稿（附术语表）。",
+      "en": "Topic list → per-article outline → drafts with a glossary."
+    },
+    "examples": [
+      {
+        "zh": "把这篇发布公告本地化成英文版，保持语气。",
+        "en": "Localize this release note into English, keeping the tone."
+      }
+    ]
+  }
+}

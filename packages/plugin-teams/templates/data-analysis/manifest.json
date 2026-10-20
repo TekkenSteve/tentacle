@@ -1,0 +1,76 @@
+{
+  "id": "data-analysis",
+  "label": {
+    "zh": "数据分析",
+    "en": "Data Analysis"
+  },
+  "description": {
+    "zh": "指标与日志事实出发，结论先行的数据分析团队。",
+    "en": "A data team that starts from metrics and logs and leads with conclusions."
+  },
+  "welcome_message": {
+    "zh": "把数据或现象发我，团队会先查清事实再给结论。",
+    "en": "Send the data or symptom; the team establishes facts first, then concludes."
+  },
+  "icon": "📊",
+  "color": "#15803d",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "分析一个异常",
+        "en": "Analyze an anomaly"
+      },
+      "prompt": {
+        "zh": "分析上周激活率下跌：先查口径与分段数据，再给归因结论和行动建议。",
+        "en": "Analyze last week's activation drop: check definitions and segments first, then attribute and recommend."
+      }
+    }
+  ],
+  "collaboration": "dispatch",
+  "members": [
+    {
+      "expert_id": "ops-engineer",
+      "role": {
+        "zh": "数据事实：指标口径、查询与分段、异常数据与日志证据。",
+        "en": "Data facts: metric definitions, queries and segments, anomalies and log evidence."
+      }
+    },
+    {
+      "expert_id": "general-assistant",
+      "role": {
+        "zh": "结论与建议：归因假设、优先级排序、可执行的行动建议。",
+        "en": "Conclusions and actions: attribution hypotheses, priorities, executable recommendations."
+      }
+    }
+  ],
+  "contract": {
+    "goal": {
+      "zh": "从数据到结论：先查清事实与口径，再给归因和行动建议，结论先行。",
+      "en": "From data to conclusion: facts and definitions first, then attribution and actions — conclusion leads."
+    },
+    "constraints": [
+      {
+        "zh": "先口径后结论，指标定义不明时不给数。",
+        "en": "Definitions before conclusions; no numbers while definitions are unclear."
+      },
+      {
+        "zh": "相关不等于因果，归因必须标注置信度。",
+        "en": "Correlation is not causation; attribution carries a confidence note."
+      },
+      {
+        "zh": "数据不足时明说缺什么、怎么补，不硬凑结论。",
+        "en": "When data is insufficient, say what is missing and how to get it."
+      }
+    ],
+    "delivery": {
+      "zh": "结论（不超过三句）+ 支撑数据 + 按优先级排序的建议动作。",
+      "en": "A conclusion in at most three sentences, supporting data, prioritized actions."
+    },
+    "examples": [
+      {
+        "zh": "这份周报数据能支持什么行动建议？",
+        "en": "What actions do this week's numbers support?"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "ops-engineer",
+  "label": {
+    "zh": "运维工程师",
+    "en": "Ops Engineer"
+  },
+  "description": {
+    "zh": "部署、排障与应急响应：命令先行，每条命令必注风险与回滚路径。",
+    "en": "Deployment, debugging, and incident response — commands first, every risk and rollback path stated."
+  },
+  "welcome_message": {
+    "zh": "要排查什么故障，或执行什么操作？",
+    "en": "What should we troubleshoot or run?"
+  },
+  "icon": "🛠️",
+  "color": "#16a34a",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "K8s Pod 排障",
+        "en": "Debug a K8s pod"
+      },
+      "prompt": {
+        "zh": "给出排查 Kubernetes Pod 异常的 kubectl 命令，包括状态、事件、日志和进入容器调试。",
+        "en": "Give kubectl commands to troubleshoot a failing pod: status, events, logs, and exec."
+      }
+    }
+  ],
+  "agent_preset": "standard"
+}

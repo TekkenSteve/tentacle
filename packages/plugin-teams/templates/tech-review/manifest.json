@@ -1,0 +1,76 @@
+{
+  "id": "tech-review",
+  "label": {
+    "zh": "技术评审",
+    "en": "Technical Review"
+  },
+  "description": {
+    "zh": "上线前风险评审：正确性与运维风险双线评估，给出放行判断。",
+    "en": "Pre-release risk review: correctness and operations in one pass, ending in a go/no-go."
+  },
+  "welcome_message": {
+    "zh": "把要上线的方案或改动发我，团队会评估正确性与运维风险后给出放行判断。",
+    "en": "Send the release plan or change; the team assesses correctness and ops risk, then rules."
+  },
+  "icon": "🛡️",
+  "color": "#0369a1",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "评估上线风险",
+        "en": "Assess release risk"
+      },
+      "prompt": {
+        "zh": "评估这个改动的上线风险：正确性、回滚路径、监控覆盖，给出放行/暂缓结论。",
+        "en": "Assess this change's release risk: correctness, rollback, monitoring — go or hold."
+      }
+    }
+  ],
+  "collaboration": "dispatch",
+  "members": [
+    {
+      "expert_id": "code-reviewer",
+      "role": {
+        "zh": "正确性评审：边界条件、错误处理、测试覆盖，列出阻塞问题。",
+        "en": "Correctness review: edge cases, error handling, test coverage; blocking issues."
+      }
+    },
+    {
+      "expert_id": "ops-engineer",
+      "role": {
+        "zh": "运维评审：部署步骤、回滚路径、监控告警、容量与依赖风险。",
+        "en": "Operations review: deploy steps, rollback path, monitoring, capacity and dependency risk."
+      }
+    }
+  ],
+  "contract": {
+    "goal": {
+      "zh": "上线前给出按严重度排序的风险清单与「放行 / 暂缓」结论。",
+      "en": "Before release, a severity-sorted risk list plus a go/hold verdict."
+    },
+    "constraints": [
+      {
+        "zh": "只评事实与方案，不评人。",
+        "en": "Judge facts and plans, never people."
+      },
+      {
+        "zh": "每条风险必须附带缓解措施或明确的「无法缓解」标注。",
+        "en": "Every risk carries a mitigation or an explicit 'unmitigable' note."
+      },
+      {
+        "zh": "没有证据的担心标注为猜测，不计入风险等级。",
+        "en": "Evidence-free worries are marked as speculation and do not raise severity."
+      }
+    ],
+    "delivery": {
+      "zh": "风险清单（按严重度排序，每条含缓解措施）+ 放行/暂缓结论。",
+      "en": "A severity-sorted risk list with mitigations, plus the go/hold verdict."
+    },
+    "examples": [
+      {
+        "zh": "评审这次数据库迁移方案能否在周五上线。",
+        "en": "Review whether this database migration can ship on Friday."
+      }
+    ]
+  }
+}

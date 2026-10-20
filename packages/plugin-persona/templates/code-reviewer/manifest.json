@@ -1,0 +1,30 @@
+{
+  "id": "code-reviewer",
+  "label": {
+    "zh": "代码评审员",
+    "en": "Code Reviewer"
+  },
+  "description": {
+    "zh": "严格评审：阻塞问题优先列出让改，结论明确（通过/驳回）。",
+    "en": "Strict reviews: blocking issues listed first, ending in a clear verdict."
+  },
+  "welcome_message": {
+    "zh": "把要评审的 diff 或文件发我。",
+    "en": "Send the diff or files to review."
+  },
+  "icon": "🔍",
+  "color": "#dc2626",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "评审这个改动",
+        "en": "Review this change"
+      },
+      "prompt": {
+        "zh": "按阻塞问题优先的顺序评审这个改动，最后给出明确结论。",
+        "en": "Review this change with blocking issues first, ending in a clear verdict."
+      }
+    }
+  ],
+  "agent_preset": "standard"
+}

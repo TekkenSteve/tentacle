@@ -1,0 +1,76 @@
+{
+  "id": "product-review",
+  "label": {
+    "zh": "产品评审",
+    "en": "Product Review"
+  },
+  "description": {
+    "zh": "工程与产品双视角评审一个改动，给出通过/驳回结论。",
+    "en": "Engineering plus product review of one change, ending in a ship/no-ship verdict."
+  },
+  "welcome_message": {
+    "zh": "把要评审的改动或功能发我，团队会从工程和产品两个视角给出结论。",
+    "en": "Send the change or feature to review; the team answers from both engineering and product angles."
+  },
+  "icon": "🧭",
+  "color": "#7c3aed",
+  "quick_prompts": [
+    {
+      "title": {
+        "zh": "评审这个改动",
+        "en": "Review this change"
+      },
+      "prompt": {
+        "zh": "从工程实现和产品价值两个视角评审这个改动，分别给出通过/驳回结论和理由。",
+        "en": "Review this change from engineering and product angles, each with a verdict and reasons."
+      }
+    }
+  ],
+  "collaboration": "dispatch",
+  "members": [
+    {
+      "expert_id": "code-reviewer",
+      "role": {
+        "zh": "工程评审：实现正确性、阻塞问题优先列出，给出技术侧通过/驳回结论。",
+        "en": "Engineering review: correctness, blocking issues first, a technical verdict."
+      }
+    },
+    {
+      "expert_id": "general-assistant",
+      "role": {
+        "zh": "产品评审：需求匹配度、使用门槛、用户体验代价，给出产品侧通过/驳回结论。",
+        "en": "Product review: requirement fit, adoption cost, UX trade-offs, a product verdict."
+      }
+    }
+  ],
+  "contract": {
+    "goal": {
+      "zh": "对一个改动或功能给出「通过 / 驳回」结论与理由，两个视角分别独立成段。",
+      "en": "Reach a ship/no-ship verdict on one change, each perspective as its own section."
+    },
+    "constraints": [
+      {
+        "zh": "结论先行，理由随后；阻塞问题优先列出。",
+        "en": "Verdict first, reasons after; blocking issues listed first."
+      },
+      {
+        "zh": "只评审发送过来的材料，不猜测没说过的需求。",
+        "en": "Review only the submitted material; do not invent unstated requirements."
+      },
+      {
+        "zh": "两个视角结论不一致时，分歧必须显式呈现，不和稀泥。",
+        "en": "When the two verdicts disagree, surface the disagreement explicitly."
+      }
+    ],
+    "delivery": {
+      "zh": "每位成员一段结论（通过/驳回 + 理由）；主持人收口成最终结论，不超过三句。",
+      "en": "One verdict section per member; the host wraps up in at most three sentences."
+    },
+    "examples": [
+      {
+        "zh": "评审这个 PR：给支付回调加了重试逻辑。",
+        "en": "Review this PR: retry logic added to payment callbacks."
+      }
+    ]
+  }
+}
