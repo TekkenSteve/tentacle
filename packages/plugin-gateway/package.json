@@ -1,0 +1,39 @@
+{
+  "name": "@tentacle/gateway",
+  "version": "0.0.1",
+  "description": "Authenticating reverse proxy for DSH: one resolver → policy → forward pipe across HTTP/RPC/WS.",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "README.md",
+    "README.zh.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tentacle/identity": "workspace:*",
+    "@tentacle/crypto": "workspace:*"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.4",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}
