@@ -1,0 +1,12 @@
+{
+  "name": "@tentacle/profile",
+  "version": "0.0.1",
+  "description": "Profile templates for one-command Tentacle setup.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "echo 'templates only'",
+    "typecheck": "echo 'no sources'",
+    "test": "vitest run --passWithNoTests"
+  }
+}

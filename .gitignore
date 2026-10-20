@@ -1,0 +1,14 @@
+node_modules/
+dist/
+# tsc/tsdown build output (regenerable; packages publish lib/ via npm, not git)
+lib/
+*.tsbuildinfo
+.tmp/
+.pnpm-store/
+.DS_Store
+# reference source clones for research only — never published, never versioned here
+archive/
+# local runtime data (DSH home artifacts from manual testing)
+v11/
+# internal design docs and research notes — kept local, not published to GitHub
+docs/

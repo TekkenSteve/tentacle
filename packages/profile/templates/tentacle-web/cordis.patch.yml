@@ -1,0 +1,14 @@
+# Minimal Tentacle profile example — user patch layer.
+# Applied after @tentacle/bundle's own patch. Start here to customize.
+
+# 例：多用户模式开关（设计见 docs/design/02-access-control.md）
+# - id: tentacle-gateway
+#   config:
+#     listen: 0.0.0.0:8080
+#     upstream: 127.0.0.1:3080
+
+# 例：切换 identity provider（设计见 docs/design/01-identity.md）
+# - id: tentacle-identity
+#   config:
+#     provider: local   # local（零配置默认）| oidc | awiki
+[]

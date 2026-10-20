@@ -1,0 +1,17 @@
+{
+  "name": "dsh-profile-tentacle-minimal",
+  "private": true,
+  "dependencies": {
+    "@tentacle/bundle": "workspace:*"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@tentacle/bundle"
+      ],
+      "patchReload": "live"
+    }
+  }
+}

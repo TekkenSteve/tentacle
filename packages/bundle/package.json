@@ -1,0 +1,40 @@
+{
+  "name": "@tentacle/bundle",
+  "version": "0.0.1",
+  "description": "dsh-tentacle-bundle — the single package users install; aggregates all Tentacle plugins with default config.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-webhook": "0.2.1-rc.2",
+    "@tentacle/identity": "workspace:*",
+    "@tentacle/gateway": "workspace:*",
+    "@tentacle/tenancy": "workspace:*",
+    "@tentacle/persona": "workspace:*",
+    "@tentacle/teams": "workspace:*",
+    "@tentacle/channels": "workspace:*",
+    "@tentacle/crypto": "workspace:*",
+    "@tentacle/oidc": "workspace:*",
+    "@deepseek-ai/dsh-experimental-agent-team": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-experimental-tool-agent-team": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-experimental-client-ui-agent-team": "0.2.1-rc.2"
+  },
+  "scripts": {
+    "build": "echo 'bundle is declarative; nothing to build'",
+    "typecheck": "echo 'no sources'",
+    "test": "vitest run --passWithNoTests"
+  }
+}

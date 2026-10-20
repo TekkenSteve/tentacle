@@ -1,0 +1,62 @@
+# Tentacle bundle layer: inserts the foundation plugins with sane defaults.
+# Order matters — identity first, then gateway, then tenancy (which plugs its
+# user directory into the gateway's authenticator seat).
+
+- insert:
+    - id: tentacle-identity
+      name: '@tentacle/identity'
+
+    - id: tentacle-gateway
+      name: '@tentacle/gateway'
+      config:
+        listen: 127.0.0.1:8180
+        # required by default: first visit opens the one-shot setup wizard
+        # (create the admin account in the browser — no config files).
+        # Set mode: passthrough for loopback dev.
+        mode: required
+
+    - id: tentacle-tenancy
+      name: '@tentacle/tenancy'
+
+    # Experience layer: mounts every expert in the library as an official
+    # agent preset (persona prefix row). Depends on nothing directly; the
+    # gateway seat is optional and discovered by nested inject at runtime.
+    - id: tentacle-persona
+      name: '@tentacle/persona'
+
+    # Team layer: first-class team objects (roster + collaboration contract),
+    # each mounted as ONE managed preset (`team-<id>`) whose rows carry the
+    # official agent-team runtime and its model-facing tools. The runtime is
+    # deliberately NOT mounted globally: a team session composes it through
+    # its preset (design 10 §3), so a non-team session never sees a roster.
+    # The web half of the official agent-team UI ships as a bundle dependency
+    # and self-mounts on the web platform; it stays inert outside a team
+    # session. Channels resolve teams through the optional seam below.
+    - id: tentacle-teams
+      name: '@tentacle/teams'
+
+    # Channel layer: platform adapters that turn bound IM identities into
+    # tenant sessions. Every adapter ships DISABLED — installing the bundle
+    # must not start talking to a platform before an operator configures a bot
+    # token. Enable with config.telegram.enabled, and set the token through the
+    # credentials store (config.telegram.tokenRef, default TELEGRAM_BOT_TOKEN).
+    #
+    # The official webhook runtime is mounted FIRST: channels dispatch inbound
+    # messages into it (`WebhookSessionRequest` is the runtime's only built-in
+    # action), so the row is a hard prerequisite, not an optional peer. DSH
+    # ships it as a library, and adapters such as dsh-webhook-github mount it
+    # themselves — Tentacle has no such adapter, so the bundle owns the mount.
+    - id: tentacle-webhook
+      name: '@deepseek-ai/dsh-webhook'
+
+    - id: tentacle-channels
+      name: '@tentacle/channels'
+      config:
+        telegram:
+          enabled: false
+
+    # SSO layer (optional): OIDC browser login as a second path beside
+    # username/password. Ships INERT — without issuer/clientId it registers
+    # nothing; a deployment activates it by patching this entry's config.
+    - id: tentacle-oidc
+      name: '@tentacle/oidc'
