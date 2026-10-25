@@ -10,6 +10,29 @@ Tentacle 是为 [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek
 
 **多租户优先设计。** 身份、鉴权、按用户隔离是地基，其他一切从这里长出来——而非事后补丁。
 
+## 它长什么样
+
+<img src="packages/bundle/assets/experts.png" alt="专家库：内置专家与自定义专家">
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="packages/bundle/assets/channels.png" alt="频道实例与专家绑定">
+      <br><sub><b>频道</b> — 飞书、Telegram、钉钉、企微、QQ、微信、元宝、Discord；平台身份映射为租户会话。</sub>
+    </td>
+    <td width="50%">
+      <img src="packages/bundle/assets/data-studio.png" alt="数据工作台：数据集、线程、图表与检查器">
+      <br><sub><b>数据工作台</b> — 数据集、可分支线程、39 种图表模板、AI 优化与报告。</sub>
+    </td>
+  </tr>
+</table>
+
+- **身份与租户** — 登录门、用户目录、邀请、资源策略、ReBAC、管理控制台。
+- **专家与团队** — 专家库、共享 Agent 预设、工作区技能、频道路由、一等公民的专家团队。
+- **频道** — 一个网关接 8 个 IM 平台，适配器默认关闭，配置后启用。
+- **数据工作台** — 导入与连接器、可分支分析线程、原生 + Flint 图表、报告。
+- **SSO 与隔离** — OIDC 浏览器登录、按用户隔离的工作区、认证后的 HTTP/RPC/WS 代理。
+
 ## 仓库结构
 
 ```

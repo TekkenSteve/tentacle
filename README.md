@@ -10,6 +10,29 @@ Scope is open by design: **anything that helps DSH connect is a candidate packag
 
 **Multi-tenant by design.** Identity, authorization, and per-user isolation are the foundation everything else grows from — not an afterthought.
 
+## What you get
+
+<img src="packages/bundle/assets/experts.png" alt="Expert library with built-in and user experts">
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="packages/bundle/assets/channels.png" alt="IM channel instances bound to experts">
+      <br><sub><b>Channels</b> — Feishu, Telegram, DingTalk, WeCom, QQ, WeChat, Yuanbao, Discord; platform identities become tenant sessions.</sub>
+    </td>
+    <td width="50%">
+      <img src="packages/bundle/assets/data-studio.png" alt="Data Studio with datasets, threads, charts and inspector">
+      <br><sub><b>Data Studio</b> — datasets, branchable threads, 39 chart templates, AI refinement and reports.</sub>
+    </td>
+  </tr>
+</table>
+
+- **Identity & tenancy** — login gate, user directory, invites, policies, ReBAC memberships, admin console.
+- **Experts & teams** — expert library, shared Agent presets, workspace skills, channel routing, first-class expert teams.
+- **Channels** — one gateway for eight IM platforms, with adapters disabled until configured.
+- **Data Studio** — imports and connectors, branching analysis threads, native + Flint charts, reports.
+- **SSO & isolation** — OIDC browser login, per-user workspaces, authenticated HTTP/RPC/WS proxy.
+
 ## Repository layout
 
 ```

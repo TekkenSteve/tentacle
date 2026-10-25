@@ -4,12 +4,32 @@ Data Studio for DSH: import datasets, explore them as **branching data threads**
 
 The shape is borrowed from Microsoft's Data Formulator (MIT): data sources on the left, thread columns in the middle, an inspector on the right; a thread is a branchable analysis path rather than a chat log.
 
+![Data Studio: datasets, branching threads, chart cards and the inspector](assets/overview.png)
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/flint-streamgraph.png" alt="Flint streamgraph rendered through Vega">
+      <br><sub><b>Flint charts</b> — 39 templates compiled to Vega-Lite and rendered as SVG.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/report-editor.png" alt="Tiptap report editor with chart embeds">
+      <br><sub><b>Reports</b> — Tiptap editing, Markdown persistence, live <code>{{chart:id}}</code> embeds.</sub>
+    </td>
+  </tr>
+</table>
+
 ## What it owns
 
 - **Data spaces**: named workspaces grouping datasets and threads under `$DSH_HOME/tentacle/data`.
 - **Datasets**: CSV/JSON import with type inference; normalized rows stored once per dataset, metadata in `state.json`.
 - **Threads**: one analysis line, forkable; fork copies its cards into a new thread.
-- **Cards**: dataset anchors, chart cards (bar / line / area / scatter / pie / donut / horizontal-bar / heatmap / boxplot; bump / streamgraph / waterfall / rose / radar / grouped-bar / stacked-bar / candlestick / gantt / histogram / density / violin / kpi / range-area / bullet / bar-table / table / range-dot / map / choropleth are compiled by Flint (map uses Vega's world basemap URL); applicable Flint chart properties (corner radius, opacity, axis type, …) are exposed as dynamic controls in the inspector to Vega-Lite and rendered with Vega), notes; chart specs are validated against dataset columns.
+- **Cards**: dataset anchors, chart cards and notes; a card is a persisted first-class object in its thread.
+- **Native chart renderer**: bar / line / area / scatter / pie / donut / horizontal-bar / heatmap / boxplot, dependency-free SVG.
+- **Flint chart renderer**: bump / streamgraph / waterfall / rose / radar / grouped-bar / stacked-bar / candlestick / gantt / histogram / density / violin / kpi / range-area / bullet / bar-table / table / range-dot / map / choropleth, compiled to Vega-Lite and rendered as SVG. Map templates use Vega's world basemap URL.
+- **Chart properties**: Flint's applicable options (corner radius, opacity, axis type, …) become inspector controls and are written back to `ChartSpec.chartProperties`; all specs are validated against dataset columns.
 - **Derived datasets**: one explicit `group` (group by + aggregate) or `filter` operation creates a new dataset with provenance (`sourceDatasetId`, `operation`), added to the thread as a dataset card. The agent can chain two transforms into a final chart.
 - **SQLite connector**: upload a `.sqlite`/`.db` file; the host lists user tables and imports one table as a normalized dataset. The upload lives only for the connector session and is deleted on close.
 - **URL connector**: server-side fetch of a remote CSV/JSON document (http(s), 10 MB, 15 s), then the same normalized import path. Useful for public data URLs and APIs.
@@ -22,12 +42,16 @@ The shape is borrowed from Microsoft's Data Formulator (MIT): data sources on th
 - **Auto refresh**: per-dataset cadence (1m/5m/15m/1h); the host runs due refreshes on a 15s tick and records `lastRefreshError` without discarding the last good rows. The browser polls the panel while auto-refresh is active.
 - **Data memory**: `DataRelation` records a key relationship between two datasets (`left.column = right.column`). A relation can be used by the manual join dialog or by the agent. Discover suggestions from same-named columns with ≥60% sampled value overlap (`GET /relations/suggest`); nothing is saved until confirmed.
 - **Joins**: one explicit key pair with `inner`/`left` mode creates a persisted dataset (`join` provenance); colliding right columns are aliased `_right`.
-- **Reports**: Markdown documents persisted per data space, with `{{chart:<cardId>}}` embeds rendered by the live chart card. Reports can be generated from a thread, edited with MarkdownText preview, copied, downloaded as `.md`, exported as standalone HTML with inlined chart SVGs, or printed to PDF.
+- **Reports**: Markdown documents persisted per data space, with `{{chart:<cardId>}}` embeds rendered by the live chart card. Reports can be generated from a thread, edited with a Tiptap rich-text editor (Markdown stays the stored format, `{{chart:<id>}}` tokens embed live cards), copied, downloaded as `.md`, exported as standalone HTML with inlined chart SVGs, or printed to PDF.
 - **Chart recommendations**: schema-shape suggestions (date→line, category→bar/pie, two measures→scatter, category-only→count) with live previews and one-click insertion into the active thread.
-- **Chart styling**: four themes (`default/warm/cool/mono`), inline chart-type switching in the inspector, one-click duplication, annotations (max point / mean line / data labels), and color/size/facet encoding channels (grouped bars/lines, colored/sized scatter points, small multiples), a numeric range control, and category sort (original/ascending/descending). Chart specs validate numeric measures for sum/avg, scatter axes, color/facet columns and numeric size. `POST /charts/refine` runs a small restyle agent that returns a validated spec patch (chart type/theme/annotations/encodings); each result is kept as a named style variant (original + last 8 AI variants) and can be re-applied from the inspector. Chart cards also carry an inline quick-config bar (type, theme swatches, annotation toggles). The inspector has a draggable field shelf with search/type filters: drop a column onto X / Y / color / size / facet.
+- **Chart styling**: four themes (`default/warm/cool/mono`), chart-type switching, one-click duplication, and annotations (max point / mean line / data labels).
+- **Encoding channels**: `color` / `size` / `facet`, grouped bars and multi-series lines, colored/sized scatter points, small multiples, numeric range controls and category sort.
+- **Inline quick config**: every chart card carries a compact bar for type, theme swatches and annotation toggles.
+- **Draggable field shelf**: search/type-filter the dataset columns and drop one onto X / Y / color / size / facet.
+- **AI chart refinement**: `POST /charts/refine` asks a model for a validated spec patch (type/theme/annotations/encodings). Each result is stored as a named style variant (original + last 8) and can be re-applied from the inspector.
 - **Interactive filters**: categorical filters stored on the chart spec (`filters: [{ column, values }]`) are applied before aggregation, editable from the chart inspector without changing the dataset.
-- **Thread filters**: filters stored on the thread (`threads/filters`) apply to every chart in that thread; datasets without the column ignore them.
-- **Export**: dataset CSV (`rowsToCsv`) and chart PNG (SVG → canvas) from the inspector; reports already export as Markdown.
+- **Thread controls**: categorical filters and numeric ranges stored on the thread (`threads/filters`) apply to every chart in that thread; datasets without the column ignore them.
+- **Export**: dataset CSV (`rowsToCsv`) and chart PNG (SVG → canvas) from the inspector; reports export as Markdown, standalone HTML with inlined SVGs, or print/PDF.
 - **Panel**: admin-only global `main` panel + `sidebar.panellist` icon (`tentacle-data`), next to experts/teams/channels.
 
 ## REST surface
@@ -76,10 +100,10 @@ The runtime is `ctx.llm` with the `agentDefaultModel` selection; without a model
 
 - The agent chain is bounded at 3 steps and chooses only one action per model call; free-form long plans are out of scope.
 - Derived datasets keep provenance but are not automatically re-derived when the source changes.
-- No connector catalog: datasets come from pasted/uploaded CSV/JSON. File/DB connectors come after the thread/chart loop is stable.
-- Charts are a dependency-free SVG renderer; the renderer is isolated so Flint/ECharts/Vega can replace it without changing the thread model.
-- Reports are in-app Markdown artifacts (chart embeds reference live cards); PDF/image export and the official deliverables sidebar are future slices.
-- Relationship discovery is manual; automatic key inference and multi-hop joins are future slices.
+- Connectors are deliberately one-shot (open → list → import → close). Persistent sync jobs and warehouse catalogs are out of scope.
+- Charts split into two backends: a dependency-free SVG renderer for the core chart types, and Flint/Vega for the remaining Flint templates. Both sit behind the same `ChartView`, so the thread model does not know which renderer draws a card.
+- Reports are in-app artifacts with live chart embeds; the official DSH deliverables sidebar is still a future slice.
+- Relationship suggestions use same-named columns plus sampled value overlap; multi-hop join planning is still a future slice.
 - SQLite/DuckDB uploads are one-shot; URL and workspace-file datasets support manual or scheduled refresh. Credentials for database/object-store connectors are request-only and never persisted.
 - Chart recommendations are structural (types + cardinality); they do not rank by analytical intent or data variance yet.
 - Large-data execution (DuckDB) is still a future slice; joins run over the in-memory normalized rows.
