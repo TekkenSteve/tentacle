@@ -47,7 +47,7 @@ PYEOF
 # Leaf plugins first (link: deps), then the bundle whose patch layer inserts
 # their entries. This mirrors `dsh plugin add dsh-tentacle-bundle` against the
 # npm registry; locally we use link: paths.
-dsh plugin --profile "$PROFILE" add "$REPO_ROOT/packages/plugin-identity" "$REPO_ROOT/packages/plugin-gateway" "$REPO_ROOT/packages/plugin-tenancy" "$REPO_ROOT/packages/plugin-persona" "$REPO_ROOT/packages/plugin-teams" "$REPO_ROOT/packages/plugin-channels" 2>/dev/null
+dsh plugin --profile "$PROFILE" add "$REPO_ROOT/packages/plugin-identity" "$REPO_ROOT/packages/plugin-gateway" "$REPO_ROOT/packages/plugin-tenancy" "$REPO_ROOT/packages/plugin-persona" "$REPO_ROOT/packages/plugin-teams" "$REPO_ROOT/packages/plugin-data" "$REPO_ROOT/packages/plugin-channels" 2>/dev/null
 dsh plugin --profile "$PROFILE" add "$REPO_ROOT/packages/bundle" 2>/dev/null
 
 echo "== 3. compose check: dump-config must contain tentacle entries under the bundle layer =="
@@ -149,11 +149,22 @@ grep -q '__ModuleLoader__.load' "$DSH_HOME/teams-client.js" || { echo "FAIL: tea
 grep -q 'tentacle-team-dialog' "$DSH_HOME/teams-client.js" || { echo "FAIL: teams client bundle lacks the detail-dialog width class"; exit 1; }
 echo "   /plugins/ teams client bundle served through the gateway (rev $TREV)"
 
+# 5d+++. the data studio client is the newest global panel; verify its bundle
+# is composed and its externals resolve against the shell table.
+echo "$BOOT" | grep -q '"id":"@tentacle/data"' || { echo "FAIL: @tentacle/data missing from __DSH_BOOT__ entries"; exit 1; }
+echo "   __DSH_BOOT__ lists the @tentacle/data client entry"
+DREV=$(echo "$BOOT" | grep -o '"@tentacle/data","url":"plugins/??@tentacle/data/client.js&rev=[a-f0-9]*"' | grep -o 'rev=[a-f0-9]*' | cut -d= -f2)
+[ -n "$DREV" ] || { echo "FAIL: could not extract the data client revision"; exit 1; }
+CODE=$(curl -s -o "$DSH_HOME/data-client.js" -w '%{http_code}' "http://127.0.0.1:$GATEWAY_PORT/plugins/??@tentacle/data/client.js&rev=$DREV")
+[ "$CODE" = "200" ] || { echo "FAIL: data client bundle returned $CODE"; exit 1; }
+grep -q '__ModuleLoader__.load' "$DSH_HOME/data-client.js" || { echo "FAIL: data client bundle is not a closure-factory module"; exit 1; }
+echo "   /plugins/ data client bundle served through the gateway (rev $DREV)"
+
 # 5d+++. every module the bundle requires at load time must exist in the
 # shell's frozen module table. The bundle is only SERVED here (the browser
 # executes it), so this is the one server-side check that an externalized
 # dependency the loader cannot answer would be caught before shipping.
-for BUNDLE in tenancy persona channels teams; do
+for BUNDLE in tenancy persona channels teams data; do
   EXTERNALS=$(python3 - "$DSH_HOME/$BUNDLE-client.js" <<'PY'
 import re, sys
 source = open(sys.argv[1], encoding='utf8').read()
@@ -424,6 +435,165 @@ CODE=$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.
   -H 'content-type: application/json' -d '{"id":"e2e-expert"}')
 [ "$CODE" = "200" ] || { echo "FAIL: deleting user expert returned $CODE, want 200"; exit 1; }
 echo "   user expert create/delete round-trip OK"
+
+# 7c++. Data Studio: workspace seed, dataset import, thread/chart round-trip
+DATA_STATE=$(curl -s -b "$JAR" "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data")
+DATA_WS=$(echo "$DATA_STATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['workspaces'][0]['id'])")
+[ -n "$DATA_WS" ] || { echo "FAIL: data studio has no default workspace: $DATA_STATE"; exit 1; }
+DATASET=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/import" \
+  -H 'content-type: application/json' \
+  -d "{\"workspaceId\":\"$DATA_WS\",\"name\":\"E2E Sales\",\"format\":\"csv\",\"content\":\"month,revenue\\nJan,120\\nFeb,180\\n\"}")
+DATA_DS=$(echo "$DATASET" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_DS" ] || { echo "FAIL: dataset import returned no id: $DATASET"; exit 1; }
+THREAD=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/threads/create" \
+  -H 'content-type: application/json' \
+  -d "{\"workspaceId\":\"$DATA_WS\",\"name\":\"E2E Revenue\",\"datasetId\":\"$DATA_DS\"}")
+DATA_TH=$(echo "$THREAD" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_TH" ] || { echo "FAIL: data thread create returned no id: $THREAD"; exit 1; }
+CHART=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/cards/create" \
+  -H 'content-type: application/json' \
+  -d "{\"threadId\":\"$DATA_TH\",\"kind\":\"chart\",\"title\":\"Revenue by month\",\"datasetId\":\"$DATA_DS\",\"spec\":{\"chart\":\"bar\",\"x\":\"month\",\"y\":\"revenue\",\"aggregate\":\"sum\"}}")
+DATA_CARD=$(echo "$CHART" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_CARD" ] || { echo "FAIL: data chart create returned no id: $CHART"; exit 1; }
+SSE_ERROR=$(curl -s -N --max-time 5 -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/agent/stream" \
+  -H 'content-type: application/json' -d '{"threadId":"missing-thread","prompt":"x"}')
+echo "$SSE_ERROR" | grep -q '"type":"error"' || { echo "FAIL: agent SSE did not emit an error event: $SSE_ERROR"; exit 1; }
+echo "$SSE_ERROR" | grep -q 'no-such-thread' || { echo "FAIL: agent SSE lost the error code: $SSE_ERROR"; exit 1; }
+echo "   data studio: agent SSE emits typed error event OK"
+THREAD_FILTERS=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/threads/filters" \
+  -H 'content-type: application/json' \
+  -d "{\"id\":\"$DATA_TH\",\"filters\":[{\"column\":\"month\",\"values\":[\"Jan\"]}],\"ranges\":[{\"column\":\"revenue\",\"min\":100}]}")
+echo "$THREAD_FILTERS" | grep -q '"column":"month"' || { echo "FAIL: thread filters failed: $THREAD_FILTERS"; exit 1; }
+echo "$THREAD_FILTERS" | grep -q '"ranges":\[{"column":"revenue","min":100}\]' || { echo "FAIL: thread ranges failed: $THREAD_FILTERS"; exit 1; }
+DATA_REPORT=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/reports/create" \
+  -H 'content-type: application/json' \
+  -d "{\"workspaceId\":\"$DATA_WS\",\"threadId\":\"$DATA_TH\",\"title\":\"E2E Report\",\"markdown\":\"# Report\\n\\n{{chart:$DATA_CARD}}\"}")
+DATA_RP=$(echo "$DATA_REPORT" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_RP" ] || { echo "FAIL: data report create returned no id: $DATA_REPORT"; exit 1; }
+DATA_RP_UPDATED=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/reports/update" \
+  -H 'content-type: application/json' \
+  -d "{\"id\":\"$DATA_RP\",\"title\":\"E2E Report Updated\"}")
+echo "$DATA_RP_UPDATED" | grep -q 'E2E Report Updated' || { echo "FAIL: report update failed: $DATA_RP_UPDATED"; exit 1; }
+DERIVED=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/derive" \
+  -H 'content-type: application/json' \
+  -d "{\"datasetId\":\"$DATA_DS\",\"name\":\"E2E By month\",\"operation\":{\"kind\":\"group\",\"groupBy\":[\"month\"],\"aggregates\":[{\"column\":\"revenue\",\"fn\":\"sum\"}]}}")
+DATA_DERIVED=$(echo "$DERIVED" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_DERIVED" ] || { echo "FAIL: data derive returned no id: $DERIVED"; exit 1; }
+# SQLite connector: upload a database, list tables, import one table.
+python3 - "$DSH_HOME/e2e-sqlite.db" <<'PYEOF'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+db.execute('CREATE TABLE sales (month TEXT, revenue REAL)')
+db.executemany('INSERT INTO sales VALUES (?, ?)', [('Jan', 10), ('Feb', 20)])
+db.commit(); db.close()
+PYEOF
+SQLITE_B64=$(base64 -w0 "$DSH_HOME/e2e-sqlite.db")
+python3 - "$SQLITE_B64" > "$DSH_HOME/sqlite-open.json" <<'PYEOF'
+import json, sys
+print(json.dumps({"contentBase64": sys.argv[1]}))
+PYEOF
+SQLITE_OPEN=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connectors/sqlite/open" \
+  -H 'content-type: application/json' --data-binary @"$DSH_HOME/sqlite-open.json")
+SQLITE_ID=$(echo "$SQLITE_OPEN" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+echo "$SQLITE_OPEN" | grep -q '"sales"' || { echo "FAIL: sqlite open did not list sales: $SQLITE_OPEN"; exit 1; }
+SQLITE_DATASET=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connectors/sqlite/import" \
+  -H 'content-type: application/json' \
+  -d "{\"connectorId\":\"$SQLITE_ID\",\"table\":\"sales\",\"workspaceId\":\"$DATA_WS\",\"name\":\"E2E SQLite\"}")
+DATA_SQLITE=$(echo "$SQLITE_DATASET" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_SQLITE" ] || { echo "FAIL: sqlite import returned no id: $SQLITE_DATASET"; exit 1; }
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connectors/sqlite/close" -H 'content-type: application/json' -d "{\"id\":\"$SQLITE_ID\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_SQLITE\"}" >/dev/null
+echo "   data studio: SQLite connector → tables → import → close OK"
+
+# DuckDB connector: create a real .duckdb file, upload it, list/import one table.
+(cd "$REPO_ROOT/packages/plugin-data" && node --input-type=module - "$DSH_HOME/e2e.duckdb" <<'JSEOF'
+import { DuckDBInstance } from '@duckdb/node-api'
+const instance = await DuckDBInstance.create(process.argv[2])
+const connection = await instance.connect()
+await connection.run('CREATE TABLE sales (month VARCHAR, revenue DOUBLE)')
+await connection.run("INSERT INTO sales VALUES ('Jan', 10), ('Feb', 20)")
+connection.closeSync(); instance.closeSync()
+JSEOF
+)
+python3 - "$DSH_HOME/e2e.duckdb" > "$DSH_HOME/duckdb-open.json" <<'PYEOF'
+import base64, json, sys
+with open(sys.argv[1], 'rb') as handle:
+    payload = base64.b64encode(handle.read()).decode('ascii')
+print(json.dumps({"contentBase64": payload}))
+PYEOF
+DUCK_OPEN=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connectors/duckdb/open" \
+  -H 'content-type: application/json' --data-binary @"$DSH_HOME/duckdb-open.json")
+DUCK_ID=$(echo "$DUCK_OPEN" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+echo "$DUCK_OPEN" | grep -q '"sales"' || { echo "FAIL: duckdb open did not list sales: $DUCK_OPEN"; exit 1; }
+DUCK_DATASET=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connectors/duckdb/import" \
+  -H 'content-type: application/json' \
+  -d "{\"connectorId\":\"$DUCK_ID\",\"table\":\"sales\",\"workspaceId\":\"$DATA_WS\",\"name\":\"E2E DuckDB\"}")
+DATA_DUCK=$(echo "$DUCK_DATASET" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_DUCK" ] || { echo "FAIL: duckdb import returned no id: $DUCK_DATASET"; exit 1; }
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connectors/duckdb/close" -H 'content-type: application/json' -d "{\"id\":\"$DUCK_ID\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_DUCK\"}" >/dev/null
+echo "   data studio: DuckDB connector → tables → import → close OK"
+
+# URL connector: serve a CSV locally, import it through the server-side fetch.
+printf 'team,points\nred,10\nblue,20\n' > "$DSH_HOME/e2e-url.csv"
+(cd "$DSH_HOME" && python3 -m http.server 18099 --bind 127.0.0.1 > e2e-url-server.log 2>&1) &
+URL_PID=$!
+sleep 1
+URL_DATASET=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/import-url" \
+  -H 'content-type: application/json' \
+  -d "{\"workspaceId\":\"$DATA_WS\",\"name\":\"E2E URL\",\"url\":\"http://127.0.0.1:18099/e2e-url.csv\"}")
+DATA_URL=$(echo "$URL_DATASET" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_URL" ] || { echo "FAIL: URL import returned no id: $URL_DATASET"; kill "$URL_PID" 2>/dev/null || true; exit 1; }
+URL_ROWS=$(echo "$URL_DATASET" | python3 -c "import json,sys; print(json.load(sys.stdin).get('rowCount'))")
+[ "$URL_ROWS" = "2" ] || { echo "FAIL: URL import rowCount=$URL_ROWS, want 2: $URL_DATASET"; kill "$URL_PID" 2>/dev/null || true; exit 1; }
+URL_REFRESH=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/refresh" \
+  -H 'content-type: application/json' -d "{\"id\":\"$DATA_URL\"}")
+echo "$URL_REFRESH" | grep -q '"rowCount":2' || { echo "FAIL: URL refresh failed: $URL_REFRESH"; kill "$URL_PID" 2>/dev/null || true; exit 1; }
+URL_AUTO=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/auto-refresh" \
+  -H 'content-type: application/json' -d "{\"id\":\"$DATA_URL\",\"seconds\":60}")
+echo "$URL_AUTO" | grep -q '"autoRefreshSec":60' || { echo "FAIL: auto-refresh setup failed: $URL_AUTO"; kill "$URL_PID" 2>/dev/null || true; exit 1; }
+kill "$URL_PID" 2>/dev/null || true
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_URL\"}" >/dev/null
+echo "   data studio: URL connector → HTTP CSV → import → refresh OK"
+
+REGION=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/import" \
+  -H 'content-type: application/json' \
+  -d "{\"workspaceId\":\"$DATA_WS\",\"name\":\"E2E Regions\",\"format\":\"csv\",\"content\":\"month,region\\nJan,north\\nFeb,south\\n\"}")
+DATA_REGION=$(echo "$REGION" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_REGION" ] || { echo "FAIL: region import returned no id: $REGION"; exit 1; }
+SUGGEST=$(curl -s -b "$JAR" "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/relations/suggest?workspaceId=$DATA_WS")
+echo "$SUGGEST" | grep -q '"leftColumn":"month"' || { echo "FAIL: relation suggestion missing month: $SUGGEST"; exit 1; }
+RELATION=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/relations/create" \
+  -H 'content-type: application/json' \
+  -d "{\"workspaceId\":\"$DATA_WS\",\"leftDatasetId\":\"$DATA_DS\",\"leftColumn\":\"month\",\"rightDatasetId\":\"$DATA_REGION\",\"rightColumn\":\"month\"}")
+DATA_REL=$(echo "$RELATION" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_REL" ] || { echo "FAIL: relation create returned no id: $RELATION"; exit 1; }
+JOINED=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/join" \
+  -H 'content-type: application/json' \
+  -d "{\"leftDatasetId\":\"$DATA_DS\",\"rightDatasetId\":\"$DATA_REGION\",\"leftColumn\":\"month\",\"rightColumn\":\"month\",\"how\":\"left\",\"name\":\"E2E Joined\"}")
+DATA_JOINED=$(echo "$JOINED" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$DATA_JOINED" ] || { echo "FAIL: join returned no id: $JOINED"; exit 1; }
+JOINED_ROWS=$(echo "$JOINED" | python3 -c "import json,sys; print(json.load(sys.stdin).get('rowCount'))")
+[ "$JOINED_ROWS" = "2" ] || { echo "FAIL: joined rowCount=$JOINED_ROWS, want 2: $JOINED"; exit 1; }
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/threads/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_TH\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_JOINED\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/relations/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_REL\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_DERIVED\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_DS\"}" >/dev/null
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/datasets/remove" -H 'content-type: application/json' -d "{\"id\":\"$DATA_REGION\"}" >/dev/null
+echo "   data studio: workspace → import → thread → chart → report → derived dataset → relation/join round-trip OK"
+
+# 7c+++. saved connection profiles keep secrets in the DSH credential store
+CONN=$(curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connections/create" \
+  -H 'content-type: application/json' \
+  -d '{"kind":"database","name":"E2E Saved","config":{"engine":"postgres","host":"example.invalid","port":5432,"database":"analytics","user":"reader"},"secret":"e2e-super-secret"}')
+CONN_ID=$(echo "$CONN" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+[ -n "$CONN_ID" ] || { echo "FAIL: saved connection create failed: $CONN"; exit 1; }
+echo "$CONN" | grep -q 'e2e-super-secret' && { echo "FAIL: saved connection leaked the secret"; exit 1; }
+CONN_LIST=$(curl -s -b "$JAR" "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connections")
+echo "$CONN_LIST" | grep -q '"name":"E2E Saved"' || { echo "FAIL: saved connection missing from list: $CONN_LIST"; exit 1; }
+curl -s -b "$JAR" -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/data/connections/remove" -H 'content-type: application/json' -d "{\"id\":\"$CONN_ID\"}" >/dev/null
+echo "   data studio: saved connection profile → credential store → list → remove OK"
 
 # 7d. disable alice → her live session dies immediately
 curl -s -b "$JAR" -o /dev/null -X POST "http://127.0.0.1:$TENANCY_PORT/tentacle/api/admin/users/disable" \

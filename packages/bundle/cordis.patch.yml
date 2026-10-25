@@ -35,6 +35,12 @@
     - id: tentacle-teams
       name: '@tentacle/teams'
 
+    # Data Studio: imported datasets + branching data threads + chart cards.
+    # Host owns the persisted data workspace; the web half is the global data
+    # panel. It is independent of the channel/team runtime by design.
+    - id: tentacle-data
+      name: '@tentacle/data'
+
     # Channel layer: platform adapters that turn bound IM identities into
     # tenant sessions. Every adapter ships DISABLED — installing the bundle
     # must not start talking to a platform before an operator configures a bot
